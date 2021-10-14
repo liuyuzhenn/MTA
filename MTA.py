@@ -6,7 +6,7 @@ import time
 from scipy.spatial.kdtree import KDTree as KDTree
 
 IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'pbm', 'pgm', 'ppm', 'tiff', 'tif']
-
+workers = 2
 
 def regularize_gray(src_img, dst_accumu_hist):
     '''
@@ -20,7 +20,7 @@ def regularize_gray(src_img, dst_accumu_hist):
     tree = KDTree(dst_accumu_hist.reshape((-1, 1)))
 
     vals_new = src_hist[src_img]
-    _, dst_vals = tree.query(vals_new.reshape((-1, 1)), k=1)
+    _, dst_vals = tree.query(vals_new.reshape((-1, 1)), k=1, workers=workers)
 
     dst_vals = dst_vals.astype(np.uint8).reshape((h1, w1))
 
@@ -70,7 +70,7 @@ def merge_them_all(img_dir, dst_img, grid_w):
         return
     print('Loaded {0} images in total!'.format(num_img))
     imgs = np.array(
-        [cv2.resize(cv2.imread(img), (grid_reso_h, grid_reso_w)) for img in imgs])
+        [cv2.resize(cv2.imread(img), (grid_reso_w, grid_reso_h)) for img in imgs])
 
     img_ret = np.zeros_like(dst_img)
     t2 = time.time()
@@ -116,6 +116,8 @@ def get_args():
                         help='Specify grid num of the target image in the width direction')
     parser.add_argument('-o', '--result_img', type=str, default='result.jpg',
                         help='Specify the path to the generated image')
+    parser.add_argument('-j', '--threads', type=int, default=2,
+                        help='Thread number')
     return parser.parse_args()
 
 
@@ -128,6 +130,8 @@ if __name__ == '__main__':
     grids = args.grids
     dst_img = cv2.imread(dst_img)
     dst_img = cv2.resize(dst_img, None, None, fx=scale, fy=scale)
+
+    workers = args.threads
 
     img = merge_them_all(img_dir, dst_img, grids)
     cv2.imwrite(args.result_img, img)

@@ -10,7 +10,7 @@ git clone git@github.com:liuyuzhenn/MTA.git
 ### Requirements
 - opencv
 - numpy
-- scipy
+- scipy 1.7.1
 
 ```sh
 pip install opencv-python numpy scipy
@@ -18,8 +18,9 @@ pip install opencv-python numpy scipy
 
 ## Usage
 ```sh
-python MTA.py --img_dir ./pics --dst_img ./pics/ava.jpg -g 30 -s 1.2
+python MTA.py --img_dir ./pics --dst_img ./tiger.jpeg -g 50 -s 7.5 -j 2 
 ```
+
 
 ## Demo
 <div align=center>
