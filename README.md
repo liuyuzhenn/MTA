@@ -1,5 +1,5 @@
 # Merge Them All
-This project is for 
+This project is for merging different images into one(see demo).
 
 ## Install
 ### Clone repo
