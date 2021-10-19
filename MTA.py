@@ -8,6 +8,7 @@ from scipy.spatial.kdtree import KDTree as KDTree
 IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'pbm', 'pgm', 'ppm', 'tiff', 'tif']
 workers = 2
 
+
 def regularize_gray(src_img, dst_accumu_hist):
     '''
     src_img - one channel image
@@ -47,7 +48,33 @@ def hist2accum(hist):
     return hist2/total
 
 
-def merge_them_all(img_dir, dst_img, grid_w):
+def transform_img(img, mode=0):
+    if mode == 0:  # resize
+        return img
+
+    elif mode == 1:  # center crop
+        h, w = img.shape[0], img.shape[1]
+        if h >= w:
+            top = h//2-w//2
+            bottom = h//2+w//2
+            return img[top:bottom, :, :]
+        else:
+            left = w//2-h//2
+            right = w//2+h//2
+            return img[:, left:right, :]
+
+    elif mode == 2:  # random square crop
+        h, w = img.shape[0], img.shape[1]
+        size = int(min(w, h) * 0.7)
+        x_lt = np.random.randint(w-size)
+        y_lt = np.random.randint(h-size)
+        return img[y_lt:y_lt+size, x_lt:x_lt+size, :]
+
+    else:
+        raise NotImplementedError
+
+
+def merge_them_all(img_dir, dst_img, grid_w, mode):
     t = time.time()
 
     dst_h, dst_w = dst_img.shape[0], dst_img.shape[1]
@@ -70,14 +97,16 @@ def merge_them_all(img_dir, dst_img, grid_w):
         return
     print('Loaded {0} images in total!'.format(num_img))
     imgs = np.array(
-        [cv2.resize(cv2.imread(img), (grid_reso_w, grid_reso_h)) for img in imgs])
+        [cv2.resize(transform_img(cv2.imread(img), mode=mode),
+         (grid_reso_w, grid_reso_h)) for img in imgs])
 
     img_ret = np.zeros_like(dst_img)
     t2 = time.time()
     for r in range(grid_h):
         for c in range(grid_w):
             idx = r*grid_w+c
-            img_id = idx % num_img
+            # img_id = idx % num_img
+            img_id = np.random.randint(num_img)
             dst_img_grid = dst_img[r*grid_reso_h:(r+1) *
                                    grid_reso_h, c*grid_reso_w:(c+1)*grid_reso_w, :]
             dst_hists = [cv2.calcHist([dst_img_grid], [i], None, [256], [
@@ -97,7 +126,7 @@ def merge_them_all(img_dir, dst_img, grid_w):
             print('|', end='')
             time_per_im = (time.time()-t2)/idx
             print(' [{0}/{1}] Estimated remaining time {2:.1f} s'.format(idx,
-                                                                          total, time_per_im*(total-idx)), end='')
+                                                                         total, time_per_im*(total-idx)), end='')
 
     print()
     print('Time cost is {0:.1f} s.'.format(time.time()-t))
@@ -118,12 +147,15 @@ def get_args():
                         help='Specify the path to the generated image')
     parser.add_argument('-j', '--threads', type=int, default=2,
                         help='Thread number')
+    parser.add_argument('-t', type=int, default=1,
+                        help='Specify resize mode. 0: resize | 1: center square crop | 2: random square crop')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = get_args()
     assert args.result_img.split('.')[-1].lower() in IMG_FORMATS
+
     img_dir = args.img_dir
     dst_img = args.dst_img
     scale = args.scale
@@ -133,5 +165,5 @@ if __name__ == '__main__':
 
     workers = args.threads
 
-    img = merge_them_all(img_dir, dst_img, grids)
+    img = merge_them_all(img_dir, dst_img, grids, args.t)
     cv2.imwrite(args.result_img, img)
