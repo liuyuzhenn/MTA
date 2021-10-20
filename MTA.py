@@ -121,8 +121,8 @@ def merge_them_all(img_dir, dst_img, grid_w, mode):
 
             idx += 1
             percen = 1.0*idx/total
-            sym_num = int(percen*100)
-            dot_num = 100 - sym_num
+            sym_num = int(percen*50)
+            dot_num = 50 - sym_num
             print('\rProgress: |', end='')
             print('#'*sym_num, end='')
             print('.'*dot_num, end='')
